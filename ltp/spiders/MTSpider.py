@@ -1,18 +1,29 @@
 from scrapy import Spider, Request
 import pymongo
 import json
+from bs4 import BeautifulSoup
+import math
 
 connection = pymongo.MongoClient('101.236.6.203', 27017)
 tdb = connection.data
-post = tdb.meituan_poi
+poi_collection = tdb.meituan_poi
+comment_collection = tdb.meituan_comment
 
 shop_url = "http://meishi.meituan.com/i/api/channel/deal/list"
-comment_url = "http://meishi.meituan.com/i/api/channel/deal/list"
+comment_url = "https://i.meituan.com/poi/{poi_id}/feedbacks/page_{page_num}"
+comment_url_start = "https://i.meituan.com/poi/{poi_id}/feedbacks"
 
 headers = {
     'Host': 'meishi.meituan.com',
     'User-Agent': 'Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Mobile Safari/537.36',
     'Content-Type': 'application/json'
+}
+referer = 'https://i.meituan.com/poi/{poi_id}/feedbacks'
+comment_header = {
+    'Host': 'i.meituan.com',
+    'Referer': referer,
+    'User-Agent': 'Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Mobile Safari/537.36',
+    'X-Requested-With': 'XMLHttpRequest'
 }
 cookies_str = """___rl__test__cookies=1509955890260;
  mtcdn=K; lsu=; _lxsdk=15f8cb3cb4fc8-06c3a0e6deea94-3f63450e-144000-15f8cb3cb4fc8; 
@@ -24,7 +35,7 @@ cookies_str = """___rl__test__cookies=1509955890260;
  _hc.v=1f801222-aa91-a94e-87ae-0a3306333dc4.1509955205; 
  pcstyle=1; __mta=247757368.1509955172389.1509955177836.1509955948840.3; 
  uuid=00f0b2fc6ed245308768.1509893578.1.0.0; 
- oc=MHknbbsCLzAJ6ZoqbP6s56Rl6WB5v0UewnHqmyd_H35ZH_AQt3dg1WWQ6joDj_vN_ClWCJD-GSg4S9WMGued"""+\
+ oc=MHknbbsCLzAJ6ZoqbP6s56Rl6WB5v0UewnHqmyd_H35ZH_AQt3dg1WWQ6joDj_vN_ClWCJD-GSg4S9WMGued""" + \
               """JAW3YwK1TeYWiiVzxe1ffq3yfkVUKH7Eeee2SiZ2c_Z9TKtpkCs_tlK42TrmluRe3QVYIlBFuM_OFoPdJxitfSM; 
  latlng=; __utma=74597006.64054930.1509956006.1509956006.1509956006.1; 
  __utmb=74597006.2.9.1509956008060; __utmc=74597006; 
@@ -35,7 +46,7 @@ cookies_str = """___rl__test__cookies=1509955890260;
   __mta=50044569.1509955206118.1509955862707.1509956009745.4; 
   _lxsdk_s=15f90575b8e-1a4-ce4-77a%7C%7C30
 """
-cookies={}
+cookies = {}
 for line in cookies_str.split(';'):
     # print line
 
@@ -48,10 +59,11 @@ class MTSpider(Spider):
     name = 'MT'
 
     def start_requests(self):
-        for i in range(0,20000,49):
+        for i in range(0, 20000, 49):
             para = {"offset": i, "limit": 50, "cateId": 1, "lineId": 0, "stationId": 0, "areaId": 0, "sort": "default",
-                "deal_attr_23": "", "deal_attr_24": "", "deal_attr_25": "", "poi_attr_20043": "", "poi_attr_20033": ""}
-        # print(i)
+                    "deal_attr_23": "", "deal_attr_24": "", "deal_attr_25": "", "poi_attr_20043": "",
+                    "poi_attr_20033": ""}
+            # print(i)
             yield Request(shop_url, method="POST", headers=headers, body=json.dumps(para), cookies=cookies, meta=para)
 
     def make_requests_from_url(self, url):
@@ -60,11 +72,33 @@ class MTSpider(Spider):
 
     def parse(self, response):
         result = json.loads(response.body_as_unicode())
-        #print(result)
-        print(response.meta['offset'],result['data']['poiList']['poiInfos'].__len__())
+        # print(result)
         for item in result['data']['poiList']['poiInfos']:
-            item['_id']=str(item['poiid'])
-            post.update({'_id':item['poiid']},item,True)
+            item['_id'] = str(item['poiid'])
+            meta = {'poi_id': item['poiid'], 'page_num': 1}
+            comment_header['Referer'] = referer.format(**meta)
+            yield Request(comment_url_start.format(**meta), callback=self.parse_comment, headers=comment_header,
+                          cookies=cookies, meta=meta)
+            poi_collection.update({'_id': item['poiid']}, item, True)
 
+    def parse_comment(self, response):
+        meta = response.meta
+        print(meta)
+        t = BeautifulSoup(response.body_as_unicode(), "html.parser")
+        if meta['page_num'] == 1:
+            comment_count= int(t.find('span',{'class':'header-tab-count'}).text)
+            for i in range(2,int(math.ceil(comment_count/15))):
+                meta['page_num']=i
+                yield Request(comment_url.format(**meta), callback=self.parse_comment, headers=comment_header,
+                              cookies=cookies, meta=meta)
+        comments = t.find_all('div', {'class': 'feedbackCard'})
+        for item in comments:
+            comment_item = {'username': item.find('weak', {'class': 'username'}).text,
+                            'text': item.find('div', {'class': 'comment'}).text,
+                            'time': item.find('weak', {'class': 'time'}).text,
+                            'pic': ['http:' + span['data-src'] for span in
+                                    item.findAll('span', {'class': 'pic-container imgbox'})], 'poi_id': meta['poi_id'],
+                            'score': item.findAll('i', {'class': 'text-icon icon-star'}).__len__()}
 
-
+            comment_item['_id'] = comment_item['username'] + comment_item['poi_id'] + comment_item['time']
+            comment_collection.update({'_id': comment_item['_id']}, comment_item, True)

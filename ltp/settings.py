@@ -81,6 +81,7 @@ ROBOTSTXT_OBEY = False
 # Enable showing throttling stats for every response received:
 #AUTOTHROTTLE_DEBUG = False
 LOG_LEVEL = 'INFO'
+CONCURRENT_REQUESTS = 1000
 # Enable and configure HTTP caching (disabled by default)
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
 #HTTPCACHE_ENABLED = True
