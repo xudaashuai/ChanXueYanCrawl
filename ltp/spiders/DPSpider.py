@@ -30,9 +30,9 @@ class MTSpider(Spider):
     name = 'DP'
 
     def start_requests(self):
-        for i in range(0, 7000, 40):
+        for i in range(0, 10000, 100):
             para = {"pageEnName": "shopList", "moduleInfoList": [{"moduleName": "mapiSearch", "query": {
-                "search": {"start": i, "categoryid": 10, "locatecityid": 16, "limit": 50, "sortid": "0", "cityid": 16,
+                "search": {"start": i, "categoryid": 10, "locatecityid": 16, "limit": 1000, "sortid": "0", "cityid": 16,
                            "range": -1, "mylat": "30.5236555", "mylng": "114.3934311", "maptype": 0},
                 "loaders": ["list"]}}]}
             # print(i)
@@ -77,8 +77,7 @@ class MTSpider(Spider):
                         {"moduleName": "autoopenapp", "query": {}}]}
             item['_id'] = str(item['id'])
             poi_collection.update({'_id': str(item['id'])}, item, True)
-            yield Request(api_url, callback=self.parse_comment, method="POST", headers=headers, body=json.dumps(para),
-                          cookies=cookies, meta=para)
+            #yield Request(api_url, callback=self.parse_comment, method="POST", headers=headers, body=json.dumps(para),cookies=cookies, meta=para)
 
     def parse_comment(self, response):
         j = json.loads(response.body_as_unicode())
