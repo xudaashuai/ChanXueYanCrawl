@@ -59,12 +59,18 @@ class MTSpider(Spider):
     name = 'MT'
 
     def start_requests(self):
-        for i in range(0, 20000, 49):
-            para = {"offset": i, "limit": 50, "cateId": 1, "lineId": 0, "stationId": 0, "areaId": 0, "sort": "default",
-                    "deal_attr_23": "", "deal_attr_24": "", "deal_attr_25": "", "poi_attr_20043": "",
-                    "poi_attr_20033": ""}
-            # print(i)
-            yield Request(shop_url, method="POST", headers=headers, body=json.dumps(para), cookies=cookies, meta=para)
+        i=0
+        while True:
+            for item in poi_collection.find({}).limit(10).skip(i):
+                print(item)
+                meta = {'poi_id': item['poiid'], 'page_num': 1}
+                comment_header['Referer'] = referer.format(**meta)
+                yield Request(comment_url_start.format(**meta), callback=self.parse_comment, headers=comment_header,
+                              cookies=cookies, meta=meta)
+
+            i+=10
+            if i>11000:
+                break
 
     def make_requests_from_url(self, url):
         # print(url)
@@ -75,15 +81,11 @@ class MTSpider(Spider):
         # print(result)
         for item in result['data']['poiList']['poiInfos']:
             item['_id'] = str(item['poiid'])
-            meta = {'poi_id': item['poiid'], 'page_num': 1}
-            comment_header['Referer'] = referer.format(**meta)
-            yield Request(comment_url_start.format(**meta), callback=self.parse_comment, headers=comment_header,
-                          cookies=cookies, meta=meta)
             poi_collection.update({'_id': item['poiid']}, item, True)
 
     def parse_comment(self, response):
         meta = response.meta
-        print(meta)
+        print(meta,response.url)
         t = BeautifulSoup(response.body_as_unicode(), "html.parser")
         if meta['page_num'] == 1:
             comment_count= int(t.find('span',{'class':'header-tab-count'}).text)
@@ -92,13 +94,17 @@ class MTSpider(Spider):
                 yield Request(comment_url.format(**meta), callback=self.parse_comment, headers=comment_header,
                               cookies=cookies, meta=meta)
         comments = t.find_all('div', {'class': 'feedbackCard'})
+        if comments.__len__()!=15:
+            print(meta,comments.__len__())
         for item in comments:
             comment_item = {'username': item.find('weak', {'class': 'username'}).text,
                             'text': item.find('div', {'class': 'comment'}).text,
-                            'time': item.find('weak', {'class': 'time'}).text,
+                            'time': item.find('weak', {'class': 'time'}).text.replace('\n',''),
                             'pic': ['http:' + span['data-src'] for span in
                                     item.findAll('span', {'class': 'pic-container imgbox'})], 'poi_id': meta['poi_id'],
                             'score': item.findAll('i', {'class': 'text-icon icon-star'}).__len__()}
-
+            if comment_item['text'].__len__() == 0:
+                print(1)
+                continue
             comment_item['_id'] = comment_item['username'] + comment_item['poi_id'] + comment_item['time']
             comment_collection.update({'_id': comment_item['_id']}, comment_item, True)
