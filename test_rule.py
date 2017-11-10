@@ -49,4 +49,5 @@ for i in range(test_num//page):
         s = Sentence(hanlp_result)
         result = r.findall(s.str())
         num += len(result)!=0
-        print(num,'/',i*page+k,'/',10000,*result,*s.match(ms))
+        print(num,'/',i*page+k,'/',10000,)
+        print(s.clear_str(),'\n',*result,*s.match(ms))

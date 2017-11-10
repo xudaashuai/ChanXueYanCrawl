@@ -34,3 +34,5 @@ class Sentence:
         return '#'.join([word.str() for word in self.words])
     def __str__(self):
         return '\n'.join(str(word) for word in self.words)
+    def clear_str(self):
+        return ' '.join([word.FORM for word in self.words])
