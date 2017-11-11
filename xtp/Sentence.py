@@ -22,13 +22,13 @@ class Sentence:
 
     def match(self, mss):
         result = []
-        for i, ms in enumerate(mss):
+        for mi, ms in enumerate(mss):
             for i in range(len(self.words) - len(ms)):
                 for j, m in enumerate(ms):
                     if not self.words[i + j].match(m):
                         break
                     if j == len(ms) - 1:
-                        result.append((i, [self.words[i + t].FORM for t in range(len(ms))]))
+                        result.append((mi, [self.words[i + t].FORM for t in range(len(ms))]))
         return result
 
     def str(self):

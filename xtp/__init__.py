@@ -6,6 +6,7 @@ connection = pymongo.MongoClient('101.236.6.203', 27017)
 tdb = connection.data
 comments = tdb.comments
 
+
 def test_by_dict(test_num, rule, debug=True):
     page = 1000
     num = 0
