@@ -36,4 +36,4 @@ ms = [[
 s = '([^ ^#]+) n.? \d+ 主谓关系(?:#([^ ]+) d.? \d+ [^#]+)*#([^ ]+) a.? [^ ]+ [^#]+'
 r = re.compile(s)
 
-test_by_dict(1000,ms,False)
+test_by_dict(10000,ms,False)
