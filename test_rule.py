@@ -1,39 +1,9 @@
 from xtp import *
-import re
-ms = [[
-    {
-        'POSTAG': 'n.?',
-        'HEAD': '1',
-        'DEPREL':'主谓关系'
-    }, {
-        'POSTAG': 'a.?'
-    }
-],[
-    {
-        'POSTAG': 'n.?',
-        'HEAD': '2',
-        'DEPREL':'主谓关系'
-    }, {
-        'POSTAG': 'd.?'
-    }, {
-        'POSTAG': 'a.?'
-    }
-],[
-{
-        'POSTAG': 'n.?',
-        'HEAD': '3',
-        'DEPREL':'主谓关系'
-    }, {
-        'POSTAG': 'd.?'
-    }, {
-        'POSTAG': 'd.?'
-    }, {
-        'POSTAG': 'a.?'
-    }
-]]
+import pymongo, re,json
 
+def rule1(sentence):
+    for word in sentence.words:
+        if word.DEPREL == '主谓关系':
+            yield (word.FORM,sentence.words[int(word.HEAD)-1].FORM)
 
-s = '([^ ^#]+) n.? \d+ 主谓关系(?:#([^ ]+) d.? \d+ [^#]+)*#([^ ]+) a.? [^ ]+ [^#]+'
-r = re.compile(s)
-
-test_by_dict(10000,ms,False)
+test_by_rule(1000,[rule1])

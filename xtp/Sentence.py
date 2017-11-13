@@ -31,6 +31,14 @@ class Sentence:
                         result.append((mi, [self.words[i + t].FORM for t in range(len(ms))]))
         return result
 
+    def match_test(self, rules):
+        result = []
+        for mi, rule in enumerate(rules):
+            r = [i for i in rule(self)]
+            if len(r)!=0:
+                result.append((mi, r ))
+        return (self.clear_str(),result)
+
     def str(self):
         return '#'.join([word.str() for word in self.words])
 
