@@ -66,6 +66,7 @@ class MTSpider(Spider):
             # print(i)
             yield Request(shop_url, method="POST", headers=headers, body=json.dumps(para), cookies=cookies,
                           meta=para)
+        i = 0
         while True:
             for item in poi_collection.find({}).limit(10).skip(i):
                 #print(item)
