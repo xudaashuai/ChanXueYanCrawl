@@ -4,9 +4,11 @@ import json
 from bs4 import BeautifulSoup
 import math
 
-connection = pymongo.MongoClient('101.236.6.203', 27017)
+connection = pymongo.MongoClient('101.236.6.203', 27017,
+                                 user='d',
+                                 password='19980819',
+                                 authSource='data')
 tdb = connection.data
-tdb.auth('d','19980819')
 poi_collection = tdb.meituan_poi
 comment_collection = tdb.meituan_comment
 
