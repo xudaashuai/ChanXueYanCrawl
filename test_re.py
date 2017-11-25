@@ -1,4 +1,13 @@
-import re
-s = "不错 a -1 核心关系#的 ude1 -1 右附加关系#， w -2 标点符号#按摩 v 1 定中关系#手法 n 2 主谓关系#很 d 1 状中结构#好 a -6 并列关系#下次 t 3 状中结构#还 d 1 状中结构#会 v 1 状中结构#再来 d -4 并列关系"
-r = re.compile('([^ ^#]+) n.? \d+ 主谓关系(?:#([^ ]+) d.? \d+ [^#]+){1}#([^ ]+) a.? [^ ]+ [^#]+')
-print(r.findall(s))
+import requests
+
+req = requests.post(
+    'https://m.nuomi.com/webapp/bnjs/request',
+    headers='',
+    data={
+        'origina': 'https://chi.nuomi.com/gaiya/food/getInfo?type=31&cityId=400010000&location=0%2C0&fid=2093&pn=1&v=7.1.0&deviceType=1&compV=3.1.5&cuid=187bc228caeaacec4c0269ef5ea096a9&terminal=3&category=326&categoryName=%E7%BE%8E%E9%A3%9F&sub_category_id=0&area_type=0&parent_area_id=1&area_id=0',
+        'type': 'get', 'extra': '{"compid":"cuisine-home"}'
+        },
+
+)
+print(req.status_code)
+print(req.content)

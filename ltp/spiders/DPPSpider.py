@@ -1,14 +1,14 @@
 from scrapy import Spider, Request
 import pymongo
-import json
+import json,re
 
 connection = pymongo.MongoClient('101.236.6.203', 27017)
 tdb = connection.data
 poi_collection = tdb.dianping_poi
 comment_collection = tdb.dianping_comment
 
-api_url = "https://m.dianping.com/isoapi/module"
-
+api_url ="https://m.dianping.com/shop/{0}/map"
+r = re.compile('"shopLat":([^,]+),"shopLng":([^,]+),')
 headers = {
     'Host': 'm.dianping.com',
     'Origin': 'https://m.dianping.com',
@@ -28,39 +28,19 @@ for line in cookies_str.split(';'):
 t =set()
 t.add(1)
 class MTSpider(Spider):
-    name = 'DP'
+    name = 'DPP'
 
     def start_requests(self):
-        for i in range(0, 10000, 1000):
-            para = {"pageEnName": "shopList", "moduleInfoList": [{"moduleName": "mapiSearch", "query": {
-                "search": {"start": i, "categoryid": 10, "locatecityid": 16, "limit": 1000, "sortid": "0", "cityid": 16,
-                           "range": -1, "mylat": "30.5236555", "mylng": "114.3934311", "maptype": 0},
-                "loaders": ["list"]}}]}
-            # print(i)
-            yield Request(api_url, method="POST", headers=headers, body=json.dumps(para), cookies=cookies, meta=para)
+        for item in poi_collection.find():
+            print(item)
+            yield Request(api_url.format(item['_id']), method="GET", headers=headers, cookies=cookies, meta=item)
 
     def make_requests_from_url(self, url):
         # print(url)
         return Request(api_url.format(url))
 
     def parse(self, response):
-        # print(response.body_as_unicode())
-        result = json.loads(response.body_as_unicode())
-        # print(result)
-        t = result['data']['moduleInfoList'][0]['moduleData']['data']['listData']['list']
-        print(response.meta['moduleInfoList'][0]['query']['search']['start'], t.__len__())
-        for item in t:
-            item['_id'] = str(item['id'])
-            poi_collection.update({'_id': str(item['id'])}, item, True)
-
-    def parse_comment(self, response):
-        j = json.loads(response.body_as_unicode())
-        data = j['data']['moduleInfoList'][1]['moduleData']['data']
-        para = response.meta
-        if data['hasNextPage']:
-            para['moduleInfoList'][1]['query']['page']+=1
-            yield Request(api_url, callback=self.parse_comment, method="POST", headers=headers, body=json.dumps(para),
-                          cookies=cookies, meta=para)
-        for item in data['reviewList']:
-            item['_id'] = str(item['reviewId'])
-            comment_collection.update({'_id': str(item['reviewId'])}, item, True)
+        item = response.meta
+        pos = r.findall(response.body_as_unicode())[0]
+        item['pos']=pos
+        poi_collection.update({'_id':item['_id']},item,False)

@@ -6,7 +6,6 @@ import math
 
 connection = pymongo.MongoClient('101.236.6.203', 27017)
 tdb = connection.data
-tdb.auth('d','19980819')
 poi_collection = tdb.meituan_poi
 comment_collection = tdb.meituan_comment
 
@@ -57,30 +56,17 @@ for line in cookies_str.split(';'):
 
 
 class MTSpider(Spider):
-    name = 'MT'
+    name = 'NM'
 
     def start_requests(self):
         i=0
-
-        for i in range(0, 20000, 49):
-            para = {"offset": i, "limit": 50, "cateId": 1, "lineId": 0, "stationId": 0, "areaId": 0,
-                    "sort": "default",
-                    "deal_attr_23": "", "deal_attr_24": "", "deal_attr_25": "", "poi_attr_20043": "",
-                    "poi_attr_20033": ""}
-            # print(i)
-            yield Request(shop_url, method="POST", headers=headers, body=json.dumps(para), cookies=cookies,
-                          meta=para)
-        return
-        while True:
-            for item in poi_collection.find({}).limit(10).skip(i):
-                #print(item)
-                meta = {'poi_id': item['poiid'], 'page_num': 1}
-                comment_header['Referer'] = referer.format(**meta)
-                yield Request(comment_url_start.format(**meta), callback=self.parse_comment, headers=comment_header,
-                              cookies=cookies, meta=meta)
-            i+=10
-            if i>11000:
-                break
+        para = {
+                'origina': 'https://chi.nuomi.com/gaiya/food/getInfo?type=31&cityId=400010000&location=0%2C0&fid=2093&pn=1&v=7.1.0&deviceType=1&compV=3.1.5&cuid=187bc228caeaacec4c0269ef5ea096a9&terminal=3&category=326&categoryName=%E7%BE%8E%E9%A3%9F&sub_category_id=0&area_type=0&parent_area_id=1&area_id=0',
+                'type': 'get', 'extra': '{"compid":"cuisine-home"}'
+            }
+        # print(i)
+        yield Request('https://m.nuomi.com/webapp/bnjs/request', method="POST", headers=headers, body=json.dumps(para),
+                      meta=para)
 
     def make_requests_from_url(self, url):
         # print(url)
@@ -88,10 +74,7 @@ class MTSpider(Spider):
 
     def parse(self, response):
         result = json.loads(response.body_as_unicode())
-        # print(result)
-        for item in result['data']['poiList']['poiInfos']:
-            item['_id'] = str(item['poiid'])
-            poi_collection.update({'_id': item['poiid']}, item, True)
+        print(result)
 
     def parse_comment(self, response):
         meta = response.meta
