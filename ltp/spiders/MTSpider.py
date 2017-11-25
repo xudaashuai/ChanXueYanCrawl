@@ -3,14 +3,8 @@ import pymongo
 import json
 from bs4 import BeautifulSoup
 import math
+from ltp.settings import *
 
-connection = pymongo.MongoClient('101.236.6.203', 27017,
-                                 user='d',
-                                 password='19980819',
-                                 authSource='data')
-tdb = connection.data
-poi_collection = tdb.meituan_poi
-comment_collection = tdb.meituan_comment
 
 shop_url = "http://meishi.meituan.com/i/api/channel/deal/list"
 comment_url = "https://i.meituan.com/poi/{poi_id}/feedbacks/page_{page_num}"

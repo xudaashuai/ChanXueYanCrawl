@@ -80,7 +80,7 @@ ROBOTSTXT_OBEY = False
 #AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
 # Enable showing throttling stats for every response received:
 #AUTOTHROTTLE_DEBUG = False
-LOG_LEVEL = 'DEBUG'
+LOG_LEVEL = 'INFO'
 CONCURRENT_REQUESTS = 1000
 # Enable and configure HTTP caching (disabled by default)
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
@@ -89,3 +89,8 @@ CONCURRENT_REQUESTS = 1000
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+import pymongo
+connection = pymongo.MongoClient("mongodb://d:19980819@101.236.6.203:27017/data?readPreference=primary")
+tdb = connection.data
+poi_collection = tdb.meituan_poi
+comment_collection = tdb.meituan_comment

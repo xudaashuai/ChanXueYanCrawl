@@ -2,10 +2,7 @@ from scrapy import Spider, Request
 import pymongo
 import json
 
-connection = pymongo.MongoClient('101.236.6.203', 27017)
-tdb = connection.data
-poi_collection = tdb.dianping_poi
-comment_collection = tdb.dianping_comment
+from ltp.settings import *
 
 api_url = "https://m.dianping.com/isoapi/module"
 
