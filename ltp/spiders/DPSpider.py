@@ -22,13 +22,12 @@ for line in cookies_str.split(';'):
 
     cookies[name] = value
 
-t =set()
-t.add(1)
+
 class MTSpider(Spider):
     name = 'DP'
 
     def start_requests(self):
-        for i in range(0, 10000, 1000):
+        for i in range(0, 10000, 50):
             para = {"pageEnName": "shopList", "moduleInfoList": [{"moduleName": "mapiSearch", "query": {
                 "search": {"start": i, "categoryid": 10, "locatecityid": 16, "limit": 1000, "sortid": "0", "cityid": 16,
                            "range": -1, "mylat": "30.5236555", "mylng": "114.3934311", "maptype": 0},
@@ -44,20 +43,31 @@ class MTSpider(Spider):
         # print(response.body_as_unicode())
         result = json.loads(response.body_as_unicode())
         # print(result)
-        t = result['data']['moduleInfoList'][0]['moduleData']['data']['listData']['list']
+        try:
+            t = result['data']['moduleInfoList'][0]['moduleData']['data']['listData']['list']
+        except:
+            return
         print(response.meta['moduleInfoList'][0]['query']['search']['start'], t.__len__())
+
         for item in t:
             item['_id'] = str(item['id'])
-            poi_collection.update({'_id': str(item['id'])}, item, True)
+            tdb.dianping_poi.update({'_id': str(item['id'])}, item, True)
+            para = {"pageEnName": "shopreviewlist", "moduleInfoList": [{"moduleName": "reviewlist",
+                                                                        "query": {"shopId": item['_id'], "page": 1,
+                                                                                  "type": 1,
+                                                                                  "keyword": "全部"}},
+                                                                       ]}
+            yield Request(api_url, callback=self.parse_comment, method="POST", headers=headers, body=json.dumps(para),
+                          cookies=cookies, meta=para)
 
     def parse_comment(self, response):
         j = json.loads(response.body_as_unicode())
-        data = j['data']['moduleInfoList'][1]['moduleData']['data']
+        data = j['data']['moduleInfoList'][0]['moduleData']['data']
         para = response.meta
         if data['hasNextPage']:
-            para['moduleInfoList'][1]['query']['page']+=1
+            para['moduleInfoList'][0]['query']['page'] += 1
             yield Request(api_url, callback=self.parse_comment, method="POST", headers=headers, body=json.dumps(para),
                           cookies=cookies, meta=para)
         for item in data['reviewList']:
             item['_id'] = str(item['reviewId'])
-            comment_collection.update({'_id': str(item['reviewId'])}, item, True)
+            tdb.dianping_comment.update({'_id': str(item['reviewId'])}, item, True)
