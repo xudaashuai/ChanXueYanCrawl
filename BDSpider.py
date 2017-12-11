@@ -31,7 +31,7 @@ for i,item in enumerate(comments):
         d[it['error_msg']]+=1
     else:
         d['success']+=1
-    if i%10==0:
+    if i%100==0:
         print(d)
 
     tdb.meituan_comment.update(item, {"$set": {"baidu_result": [(ite['prop'],ite['adj']) for ite in it.get('items',[])]}})
