@@ -24,6 +24,8 @@ for i,item in enumerate(comments):
         continue
 
     if 'error_code' in it:
+        if it['error_code'] == 19:
+            exit(0)
         if it['error_msg'] not in d:
             d[it['error_msg']]=0
         d[it['error_msg']]+=1
