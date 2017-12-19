@@ -1,13 +1,9 @@
 from ltp.settings import *
 import jieba
 with open('r.txt','w+',encoding='utf-8') as f:
-    t = 0
-    while True:
-        t +=1
-        k = True
-        print(t)
-        for i,item in enumerate(comment_collection.find({'baidu_result': {'$ne': None}}).skip(t*100).limit(100)):
-
+        for i,item in enumerate(comment_collection.find({'baidu_result': {'$ne': None}})):
+            if i%100==0:
+                print(i)
             baidu_result = item['baidu_result']
             if baidu_result == 'error':
                 continue
@@ -19,6 +15,3 @@ with open('r.txt','w+',encoding='utf-8') as f:
                 f.write('-'.join(it)+'-'+str(item['score']))
                 f.write('\n')
             f.flush()
-            k = False
-        if k:
-            break
