@@ -1,13 +1,24 @@
-import requests
+from ltp.settings import *
+import jieba
+with open('r.txt','w+',encoding='utf-8') as f:
+    t = 0
+    while True:
+        t +=1
+        k = True
+        print(t)
+        for i,item in enumerate(comment_collection.find({'baidu_result': {'$ne': None}}).skip(t*100).limit(100)):
 
-req = requests.post(
-    'https://m.nuomi.com/webapp/bnjs/request',
-    headers='',
-    data={
-        'origina': 'https://chi.nuomi.com/gaiya/food/getInfo?type=31&cityId=400010000&location=0%2C0&fid=2093&pn=1&v=7.1.0&deviceType=1&compV=3.1.5&cuid=187bc228caeaacec4c0269ef5ea096a9&terminal=3&category=326&categoryName=%E7%BE%8E%E9%A3%9F&sub_category_id=0&area_type=0&parent_area_id=1&area_id=0',
-        'type': 'get', 'extra': '{"compid":"cuisine-home"}'
-        },
-
-)
-print(req.status_code)
-print(req.content)
+            baidu_result = item['baidu_result']
+            if baidu_result == 'error':
+                continue
+            for it in baidu_result:
+                if len(it[1]) == 0:
+                    it = [itt for itt in jieba.cut(it[0])]
+                if len(it) != 2:
+                    continue
+                f.write('-'.join(it)+'-'+str(item['score']))
+                f.write('\n')
+            f.flush()
+            k = False
+        if k:
+            break
